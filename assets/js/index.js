@@ -1,164 +1,144 @@
 let currentPage = 1;
-let loadedCharacters = [];
-
 let isLoading = false;
 
-const fetchApiAll = async(page = 1, limit = 8) => {
-    try{
-        const response = await fetch("https://rickandmortyapi.com/api/character?page=${page}&limit=${limit}");
+const listaPokemon = document.querySelector("#listaPokemon");
+const botonesHeader = document.querySelector("#btn-header");
+
+const fetchApiAll = async (page = 1, limit = 8) => {
+    try {
+        const offset = (page - 1) * limit;
+        const response = await fetch(`https://pokeapi.co/api/v2/pokemon/?offset=${offset}&limit=${limit}`);
         const data = await response.json();
-        return data.results;
-    }catch(error){
+        return data;
+    } catch (error) {
         console.log(error);
     }
 }
 
-const createCharacterCards = async (characters) => {
-
-    const personajesRow = document.getElementById('personajesRow');
-
-    characters.map((character) => {
-         const { id, name,image } = character;
-         
-             const divRow = document.createElement('div');
-             divRow.classList.add("col-xl-3");
-             divRow.classList.add("col-lg-3");
-             divRow.classList.add("col-md-3");
-             divRow.classList.add("col-sm-12");
-             divRow.classList.add("col-xs-12");
-
-             const card = document.createElement('div');
-             card.classList.add('card');
-             card.classList.add('mt-2');
-             card.classList.add('mb-2');
-
-             const imgCard = document.createElement('img');
-             imgCard.classList.add('card-img-top');
-             imgCard.classList.add('mt-2');
-             imgCard.classList.add('mx-auto');
-             imgCard.classList.add('w-75');
-             imgCard.src = image;
-
-             const divBody = document.createElement('div');
-             divBody.classList.add('card-body');
-             divBody.classList.add('text-center');
-             divBody.classList.add('mx-auto');
-
-             const tituloC = document.createElement('h5');
-             tituloC.classList.add('card-title');
-             tituloC.textContent = name;
-
-             const levelC = document.createElement('p');
-             levelC.classList.add('card-text');
-             levelC.textContent = id;
-
-             const btnVer = document.createElement('button');
-             btnVer.classList.add('btn');
-             btnVer.classList.add('btn-primary');
-             btnVer.classList.add('text-center');
-             btnVer.classList.add('mx-auto');
-
-             btnVer.textContent = 'Ver detalles';
-             btnVer.addEventListener("click", () => enviarData(id, name, image));             
-
-             divRow.appendChild(card);
-             card.appendChild(imgCard);
-             card.appendChild(divBody);
-
-             divBody.appendChild(tituloC);
-             divBody.appendChild(levelC);
-             divBody.appendChild(btnVer);
-
-             personajesRow.appendChild(divRow);
-        });
+const mostrarPokemon = async (pokemons) => {
+    for (const pokemon of pokemons) {
+        const response = await fetch(pokemon.url);
+        const data = await response.json();
+        renderizarPokemon(data);
     }
-     
+}
+
+const renderizarPokemon = (pokemon) => {
+
+    let tipos = pokemon.types.map((type) => `<p class="${type.type.name} tipo">${type.type.name}</p>`);
+    tipos = tipos.join('');
 
 
-
-fetchApiAll()
-    .then((data)=> {
-        const { id , name , image , origin } = data[0];
-        
-        const { name : nombre , url } = origin;
-
-
-        console.log(id);
-        console.log(name);
-        console.log(image);        
-
-        console.log("----------------------");
-        console.log(nombre);
-        console.log(url);
-        createCharacterCards(data);
-    })
-    .catch((error) => {
-        console.log(`El error es: ${error}`);
-})
-
-    export const loadMoreCharacters = async () => {
-        if (isLoading) return;
-        isLoading = true;
+    const div = document.createElement("div");
+    div.classList.add("pokemon");
+    div.innerHTML = `
     
-        currentPage++;
-        const characters = await fetchApiAll(currentPage);
-        if (characters.length > 0) {
-            createCharacterCards(characters);
-        } else {
-            // No more characters to load
-            alert("No hay más personajes disponibles.");
-        }
-    
-        isLoading = false;
-    }
+    <div class="pokemon">
+    <p class="pokemon-id-back">#${pokemon.id}</p>
+    <div class="pokemon-imagen">
+        <img src="${pokemon.sprites.other["official-artwork"].front_default}" alt="${pokemon.name}">
+    </div>
+    <div class="pokemon-info">
+        <div class="nombre-contenedor">
+            <p class="pokemon-id">#${pokemon.id}</p>
+            <h2 class="pokemon-nombre">${pokemon.name}</h2>
 
-    const enviarData = (id , name , image) => {
-        const rutaArchivoHTML = '../personajes.html';
-        
-        console.log(id);
-        console.log(name);
-        console.log(image);
-        //Realiza una solicitud para obtener el contenido del archivo HTML
-        fetch(rutaArchivoHTML)
-             .then((response) => response.text())
-             .then(html => {
+        </div>
+        <div class="pokemon-tipos">
+            ${tipos}
+        </div>
+        <div class="pokemon-stats">
+            <p class="stat">${pokemon.height} mts</p>
+            <p class="stat">${pokemon.weight} kg</p>
+        </div>
+    </div>
+</div> 
     
-                // Una vez que hayas obtenido el contenido del archivo HTML, puedes manipularlo
-                const parser = new DOMParser();
-                const doc = parser.parseFromString(html, 'text/html');
-    
-    //         // Modifica el contenido del archivo HTML como desees
-               const imagePage = doc.getElementById('imagePage');
-               imagePage.src = image;
-    
-               const namePage = doc.getElementById('name');
-    //         namePage.textContent = name;
-    
-               const idPage = doc.getElementById('id');
-               idPage.textContent = id;
-    
-               const nuevoHTML = new XMLSerializer().serializeToString(doc);               
+  `;
+  listaPokemon.append(div);
+}
 
-          // Finalmente, puedes usar el nuevo HTML como desees, por ejemplo, inyectándolo en tu página actual
-            document.body.innerHTML = nuevoHTML;
-             })
-    
-        .catch(error => {
-          console.error('Error al cargar el archivo HTML:', error);
-        });
+// botonesHeader.forEach(boton => boton.addEventListener("click" , (event) => { 
+
+
+//     const botonId = event(currentTarget.id);
+
+//     const mostrarPokemon = async (pokemons) => {
+//         for (const pokemon of pokemons) {
+//             const response = await fetch(pokemon.url);
+
+//             const tipos = data.types.map((type => type.type.name));
+
+//             if (tipos.some(tipo => tipo.includes(botonId))){
+
+                
+//                 const data = await response.json();
+//                 renderizarPokemon(data);
+
+//                 const loadMoreCharacters = async () => {
+//                     if (isLoading) return;
+//                     isLoading = true;
+                
+//                     currentPage++;
+//                     const data = await fetchApiAll(currentPage);
+//                     if (data.results.length > 0) {
+//                         await mostrarPokemon(data.results);
+//                     } else {
+//                         // No more characters to load
+//                         alert("No hay más personajes disponibles.");
+//                     }
+                
+//                     isLoading = false;
+//                 }
+                
+//                 const loadInitialCharacters = async () => {
+//                     const data = await fetchApiAll();
+//                     await mostrarPokemon(data.results);
+//                 }
+                
+//                 window.onload = loadInitialCharacters;
+                
+//                 window.addEventListener('scroll', () => {
+//                     const { scrollTop, scrollHeight, clientHeight } = document.documentElement;
+                
+//                     if (scrollTop + clientHeight >= scrollHeight - 5 && !isLoading) {
+//                         loadMoreCharacters();
+//                     }
+//                 });
+//             }
+//         }
+//     }
+// }));
+
+const loadMoreCharacters = async () => {
+    if (isLoading) return;
+    isLoading = true;
+
+    currentPage++;
+    const data = await fetchApiAll(currentPage);
+    if (data.results.length > 0) {
+        await mostrarPokemon(data.results);
+    } else {
+        // No more characters to load
+        alert("No hay más personajes disponibles.");
     }
 
-    export const loadInitialCharacters = async () => {
-        const characters = await fetchApiAll();
-        createCharacterCards(characters);
+    isLoading = false;
+}
+
+const loadInitialCharacters = async () => {
+    const data = await fetchApiAll();
+    await mostrarPokemon(data.results);
+}
+
+window.onload = loadInitialCharacters;
+
+window.addEventListener('scroll', () => {
+    const { scrollTop, scrollHeight, clientHeight } = document.documentElement;
+
+    if (scrollTop + clientHeight >= scrollHeight - 5 && !isLoading) {
+        loadMoreCharacters();
     }
+});
 
-    window.onload = loadInitialCharacters;
 
-    window.addEventListener('scroll', () => {
-        const { scrollTop, scrollHeight, clientHeight } = document.documentElement;
-    
-        if (scrollTop + clientHeight >= scrollHeight - 5 && !isLoading) {
-            loadMoreCharacters();
-        }
-    });
